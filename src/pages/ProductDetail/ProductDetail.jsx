@@ -13,10 +13,27 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
+  const [fade, setFade] = useState(true);
 
+  const changeImage = (newIndex) => {
+    setFade(false);
+    setTimeout(() => {
+      setActiveImage(newIndex);
+      setFade(true);
+    }, 300);
+  };
   useEffect(() => {
     fetchProduct();
   }, [slug]);
+  useEffect(() => {
+    if (!product?.images || product.images.length <= 1) return;
+
+    const interval = setInterval(() => {
+      changeImage((activeImage + 1) % product.images.length);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [activeImage, product]);
 
   const fetchProduct = async () => {
     setLoading(true);
@@ -60,15 +77,18 @@ export default function ProductDetail() {
       <div>
         {/* Main Image */}
         <div className="relative overflow-hidden rounded-2xl bg-gray-100">
-          <img
-            src={
-              product.images?.[activeImage]
-                ? `${import.meta.env.VITE_STORAGE_URL}/${product.images[activeImage].image_url}`
-                : '/placeholder.png'
-            }
-            alt={product.name}
-            className="w-full h-[420px] object-cover transition duration-300"
-          />
+          <div className="flex justify-center items-center" style={{ height: '500px' }}>
+            <img
+              src={
+                product.images?.[activeImage]
+                  ? `${import.meta.env.VITE_STORAGE_URL}/${product.images[activeImage].image_url}`
+                  : '/placeholder.png'
+              }
+              alt={product.name}
+              style={{ transition: 'opacity 0.3s ease-in-out', opacity: fade ? 1 : 0 }}
+              className="object-contain w-full h-full transition duration-300"
+            />
+          </div>
 
           {/* Sale Badge */}
           {product.is_on_sale && (
@@ -81,27 +101,27 @@ export default function ProductDetail() {
           {product.images?.length > 1 && (
             <>
               <button
-                onClick={() => setActiveImage(i => Math.max(i - 1, 0))}
+                onClick={() => changeImage(Math.max(activeImage - 1, 0))}
                 disabled={activeImage === 0}
                 className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full w-9 h-9 flex items-center justify-center shadow transition disabled:opacity-30"
               >
                 ‹
               </button>
               <button
-                onClick={() => setActiveImage(i => Math.min(i + 1, product.images.length - 1))}
+                onClick={() => changeImage(Math.min(activeImage + 1, product.images.length - 1))}
                 disabled={activeImage === product.images.length - 1}
                 className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full w-9 h-9 flex items-center justify-center shadow transition disabled:opacity-30"
               >
                 ›
               </button>
 
-              {/* Dot indicators */}
+              {/* Dots */}
               <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
                 {product.images.map((_, i) => (
                   <button
                     key={i}
-                    onClick={() => setActiveImage(i)}
-                    className={`w-2 h-2 rounded-full transition ${i === activeImage ? 'bg-indigo-600 w-4' : 'bg-white/70'
+                    onClick={() => changeImage(i)}
+                    className={`h-2 rounded-full transition-all duration-300 ${i === activeImage ? 'bg-indigo-600 w-4' : 'bg-white/70 w-2'
                       }`}
                   />
                 ))}
@@ -118,10 +138,8 @@ export default function ProductDetail() {
                 key={img.id}
                 src={`${import.meta.env.VITE_STORAGE_URL}/${img.image_url}`}
                 alt=""
-                onClick={() => setActiveImage(i)}
-                className={`w-16 h-16 object-cover rounded-lg cursor-pointer flex-shrink-0 transition border-2 ${i === activeImage
-                    ? 'border-indigo-500 opacity-100'
-                    : 'border-transparent opacity-60 hover:opacity-100'
+                onClick={() => changeImage(i)}
+                className={`w-16 h-16 object-cover rounded-lg cursor-pointer flex-shrink-0 transition border-2 ${i === activeImage ? 'border-indigo-500 opacity-100' : 'border-transparent opacity-60 hover:opacity-100'
                   }`}
               />
             ))}
@@ -163,9 +181,10 @@ export default function ProductDetail() {
         </p>
 
         {/* Description */}
-        <p className="mt-4 text-gray-600 leading-relaxed">
-          {product.description || 'No description available'}
-        </p>
+        <div
+          className="mt-4 text-gray-600 leading-relaxed"
+          dangerouslySetInnerHTML={{ __html: product.description || 'No description available' }}
+        />
 
         {/* Quantity + Add to Cart */}
         {product.stock > 0 && (
