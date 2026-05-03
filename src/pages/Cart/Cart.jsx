@@ -96,7 +96,7 @@ export default function Cart() {
                     {items.map((item) => {
                         const image = item.product?.images?.find(i => i.is_primary) || item.product?.images?.[0];
                         const imageUrl = image
-                            ? `${import.meta.env.VITE_STORAGE_URL}/${image.image_url}`
+                            ? `${import.meta.env.VITE_STORAGE_URL}${image.image_url}`
                             : '/placeholder.png';
 
                         return (
